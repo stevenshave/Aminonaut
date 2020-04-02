@@ -1,5 +1,5 @@
 # NullomerPeptides
-Software to identify and analyse nullomer peptides from UniProt data
+Software to identify and analyse nullomer peptides from UniProt (Swiss-Prot) XML data
 
 This software is an output of the Leverhulme funded project:
 _"Understanding the biological ramifications of a ‘forbidden’ peptide nullomer."_

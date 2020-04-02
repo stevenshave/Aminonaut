@@ -2,8 +2,8 @@
 """
 Count peptide occurrences from uniprot data
 
-Using a downloaded representation of UniProt as XML, parse out all peptides,
-summing occurence counts of all unique peptides
+Using a downloaded representation of UniProt (Swiss-Prot) as XML, parse out
+all peptides, summing occurence counts of all unique peptides
 """
 
 __author__ = "Steven Shave"
@@ -18,13 +18,14 @@ import gzip
 
 def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_count_cutoff:int=1e12):
     """
-    Main entry point of the program, count all AA stretches present in input_file_name 
+    Count all AA stretches present in input_file_name, write out counts to csv.
     
-    Read in a UniProt-SwissProt XML file, extracting <sequence> records, and counting
+    Read in a UniProt (Swiss-Prot) XML file, extracting <sequence> records, and counting
     the number of times each possible unique peptide is seen for a given length.
     """
 
-    # Amino acid lookup list, and AA->int and reverse dictionaries
+    # Amino acid lookup list, and AA->int and reverse dictionaries for array
+    # addressing
     valid_amino_acid_symbols_set = set('FLIMVSPTAYHQENKDCWRG')
     valid_amino_acid_symbols_list = list(valid_amino_acid_symbols_set)
     aa_to_int = {v: valid_amino_acid_symbols_list.index(
@@ -40,7 +41,10 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
         lines_in_file = sum(1 for line in open(input_file_name))
     print(f"{lines_in_file} lines in {input_file_name}")
 
-    # This is our big n-dimensional array, with each axis representing a position, and of length 20 for each amino acid
+    # This is our big n-dimensional array, with each axis representing 
+    # a peptide AA position, and of length 20 representing each amino acid
+    # A peptide length of 2 would have shape (20, 20), and length 3 would
+    # be (20,20,20) etc.
     counts = np.zeros(
         tuple(*[[len(valid_amino_acid_symbols_list)]*nullomer_length]), dtype=int)
     print(

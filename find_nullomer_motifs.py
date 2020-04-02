@@ -23,11 +23,12 @@ def fine_nullomer_motifs(input_filename:str, output_filename, pattern_length):
     output_filename.
     """
     
-    # Valid amino acids
+    # Valid amino acids plus . to represent any AA.  Dot is regex for any char.
     aas="ARNDCEQGHILKMFPSTWYV."
-    patterns=set()
    
-    # Enumerate all combinations of chars in aas
+    # Enumerate all combinations of chars in aas. Patterns is used to make sure
+    #  we have not seen it before
+    patterns=set()
     unique_patterns=[x for x in product(*[aas]*pattern_length) if tuple(x[::-1]) not in patterns and not patterns.add(tuple(x))]
     print("Unique patterns", unique_patterns)
     
