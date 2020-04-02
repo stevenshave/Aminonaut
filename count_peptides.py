@@ -134,4 +134,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     count_peptides(args.uniprot_input_file, args.output_filename,
-                       args.nullomer_lengths, args.output_cutoff)
+                       args.peptide_lengths, args.output_cutoff)
