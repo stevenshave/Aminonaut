@@ -16,7 +16,7 @@ import argparse, re, gzip
 from itertools import product
 
 
-def fine_nullomer_motifs(input_filename:str, output_filename, pattern_length):
+def find_nullomer_motifs(input_filename:str, output_filename, pattern_length):
     """ 
     Function to explore all possible motifs of lenght pattern_length and count
     how well they define nullomers present in input_filename.  Writes csv to
@@ -92,5 +92,5 @@ if __name__ == "__main__":
         version="%(prog)s (version {version})".format(version=__version__))
 
     args = parser.parse_args()
-    fine_nullomer_motifs(args.input_filename, args.output_filename,
+    find_nullomer_motifs(args.input_filename, args.output_filename,
                        args.motif_length)
