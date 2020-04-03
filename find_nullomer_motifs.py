@@ -37,7 +37,7 @@ def find_nullomer_motifs(input_filename:str, output_filename, pattern_length):
 
     # Occurences dictionary holds number of pattern matches
     occurences={}
-    print("len queries=", len(regex_queries))
+    print("Number of regex motif queries=", len(regex_queries))
     nullomer_counter=0
     
     input_file=None
