@@ -1,0 +1,16 @@
+# YAML 1.2
+---
+authors: 
+  -
+    family-names: Shave
+    given-names: Steven
+    orcid: "https://orcid.org/0000-0001-6996-3663"
+cff-version: "1.1.0"
+date-released: 2020-04-02
+doi: "10.7488/ds/2797"
+license: MIT
+message: "If you use this software, please cite it using these metadata."
+repository-code: "https://github.com/stevenshave/NullomerPeptides"
+title: NullomerPeptides
+version: "1.0.0"
+...
