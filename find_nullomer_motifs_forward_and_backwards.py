@@ -1,0 +1,140 @@
+
+"""
+Identify motifs which account for nullomer peptides
+
+Reading in files containing counts of unique peptides at certain lengths,
+generate motifs (20 AAs + any AA) and count how many times the motif
+accounts for a nullomer peptide.  This allows identification of sequences that
+life does not like to make. Motifs are also queried in reverse, so M..C would
+match MWWC, and CWWM.
+"""
+
+__author__ = "Steven Shave"
+__version__ = "1.0.0"
+__license__ = "MIT"
+
+import argparse
+import re
+import gzip
+from itertools import product
+
+
+class CodonCounter():
+    aa_to_codon_count = {
+        'A': 4,
+        'R': 6,
+        'N': 2,
+        'D': 2,
+        'C': 2,
+        'Q': 2,
+        'E': 2,
+        'G': 4,
+        'H': 2,
+        'I': 3,
+        'L': 6,
+        'K': 2,
+        'M': 1,
+        'F': 2,
+        'P': 4,
+        'S': 6,
+        'T': 4,
+        'W': 1,
+        'Y': 2,
+        'V': 4,
+        '.': 61,
+    }
+
+    def query(self, motif):
+        count = 0
+        for c in motif:
+            count += self.aa_to_codon_count[c]
+        return count
+
+
+def find_nullomer_motifs(input_filename: str, output_filename, pattern_length):
+    """ 
+    Function to explore all possible motifs of lenght pattern_length and count
+    how well they define nullomers present in input_filename.  Writes csv to
+    output_filename.
+    """
+
+    # Valid amino acids plus . to represent any AA.  Dot is regex for any char.
+    aas = "ARNDCEQGHILKMFPSTWYV."
+
+    # Enumerate all combinations of chars in aas. Patterns is used to make sure
+    #  we have not seen it before
+    patterns = set()
+    unique_patterns = [x for x in product(
+        *[aas]*pattern_length) if tuple(x[::-1]) not in patterns and not patterns.add(tuple(x))]
+    print("Unique patterns", unique_patterns)
+
+    # Compile to regular expressions all combinations of chars
+    regex_queries = [re.compile("".join(m)) for m in unique_patterns]
+
+    # Occurences dictionary holds number of pattern matches
+    occurences = {}
+    print("Number of regex motif queries=", len(regex_queries))
+    nullomer_counter = 0
+
+    input_file = None
+    if input_filename[-3:] == ".gz":
+        input_file = gzip.open(input_filename, 'rt')
+    else:
+        input_file = open(input_filename)
+
+    for line_it, line in enumerate(input_file.readlines()):
+        if line_it % 10000 == 0:  # Progress counter
+            print(line_it)
+        if line.find(",") == -1:
+            continue  # If line does not contain a comma, skip
+        if int(line.split(",")[1]) > 0:
+            continue  # If not a nullomer, skip
+        nullomer_counter += 1
+        for regex_query in regex_queries:
+            regex_result = regex_query.findall(
+                line)+regex_query.findall(line[::-1])
+            if len(regex_result) > 0:  # If regex matches, add to dict or increment
+                if regex_query.pattern in occurences.keys():
+                    occurences[regex_query.pattern] += len(regex_result)
+                else:
+                    occurences[regex_query.pattern] = len(regex_result)
+    input_file.close()
+    output_file = None
+    codon_counter=CodonCounter()
+
+    # Write the output file, containing regex, number of matches.
+    if output_filename[-3:] == ".gz":  # Writing compressed gz file
+        output_file = gzip.open(output_filename, "wb")
+        output_file.write(f"{'Motif,':>10}{'Count,':>10}{'%Match,':>10}{'ValidCodons':>15}\n".encode())
+        for l in sorted(occurences.items(), key=lambda x: x[1], reverse=True):
+            output_file.write(f"{l[0]+',':>10}{str(l[1])+',':>10}{(100*l[1]/nullomer_counter):>8.3f}%{codon_counter.query(l[0]):>15}\n".encode())
+        output_file.close()
+    else:
+        output_file = open(output_filename, "w")
+        output_file.write(f"{'Motif,':>10}{'Count,':>10}{'%Match,':>10}{'ValidCodons':>15}\n")
+        for l in sorted(occurences.items(), key=lambda x: x[1], reverse=True):
+            output_file.write(
+                f"{l[0]+',':>10}{str(l[1])+',':>10}{(100*l[1]/nullomer_counter):>8.3f}%{codon_counter.query(l[0]):>15}\n")
+        output_file.close()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+
+    # Required positional argument
+    parser.add_argument(
+        "input_filename", help="File containing peptides and counts comma separated")
+    parser.add_argument("output_filename",
+                        help="File to output motif hit counts to")
+    parser.add_argument("motif_length",
+                        help="File containing sequences", type=int)
+
+    # Specify output of "--version"
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%(prog)s (version {version})".format(version=__version__))
+
+    args = parser.parse_args()
+    find_nullomer_motifs(args.input_filename, args.output_filename,
+                         args.motif_length)

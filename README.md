@@ -52,8 +52,8 @@ Note we specify a file extension ending in .gz for the 5 and 6-mers. This is bec
 
 
 
-### find_nullomer_motifs.py
-This program reads in output from the previous count_peptides program, essentailly CSV files with the first column containing the unique peptide sequence, and followed by another column with the number of times the peptide was found.  With this read in, it constructs set length motifs and queries how many nullomers this motif covers.  For example, with the identification of CQWW, we may theorise that the motiff C..W where dot is any amino acid is enriched within the 5-mers.  We may use find_nullomer_motifs to enumerate all possible motifs and query the previously generated datasets, counting how many nullomers match the queried motif.
+### find_nullomer_motifs.py and find_nullomer_motifs_forward_and_backwards.py
+These program read in output from the previous count_peptides.py program, essentailly CSV files with the first column containing the unique peptide sequence, and followed by another column with the number of times the peptide was found.  With this read in, it constructs set length motifs and queries how many nullomers this motif covers.  For example, with the identification of CQWW, we may theorise that the motiff C..W where dot is any amino acid is enriched within the 5-mers.  We may use find_nullomer_motifs to enumerate all possible motifs and query the previously generated datasets, counting how many nullomers match the queried motif. The program find_nullomer_motifs matches motifs in only the forwards direction, so C..W would match CQWW, and not WWQC.  The program find_nullomer_motifs_forward_and_backwards matches in both directions, so the morif C..W would match CQWW and WWQC.
 
 #### Usage
 ```

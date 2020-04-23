@@ -99,7 +99,7 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
     print(f"MAX = {highest_count}")
     #for current_count in sorted(list(set(counts.flatten())), reverse=True):
     for current_count in np.unique(counts)[::-1]:
-        if current_count<maximum_count_cutoff: continue
+        if current_count<maximum_count_cutoff: break
         print("Outputting, ", current_count)
         indexes_of_current_count = np.argwhere(counts == current_count)
         for counts_index in indexes_of_current_count:
