@@ -14,7 +14,8 @@ __license__ = "MIT"
 
 import argparse, re, gzip
 from itertools import product
-
+import numpy as np
+from nullomer_codon_counter import CodonCounter
 
 def find_peptide_motifs(input_filename:str, output_filename, pattern_length):
     """ 
@@ -48,11 +49,12 @@ def find_peptide_motifs(input_filename:str, output_filename, pattern_length):
         input_file=open(input_filename)
 
     for line_it, line in enumerate(input_file.readlines()):
-        if line_it%1000==0: # Progress counter
+        if line_it==0: continue # Skip file header
+        if line_it%10000==0: # Progress counter
             print(line_it)
         if line.find(",0")!=-1:continue # If nullomer peptide found, continue, we are counting peptides here
         if line.find(",")==-1:continue # If line does not contain a comma, skip
-        peptide_count=int(line.split(",")[1])
+        peptide_count=int(line.split(",")[-1])
         total_peptide_count+=peptide_count
         for regex_query in regex_queries:
             regex_result=regex_query.findall(line)
@@ -63,19 +65,28 @@ def find_peptide_motifs(input_filename:str, output_filename, pattern_length):
                     occurences[regex_query.pattern]=len(regex_result)*peptide_count
     input_file.close()
     output_file=None
-    # Write the output file, containing regex, number of matches.
+    codon_counter=CodonCounter()
+    file_header=f"{'Motif,':>10}{'Count,':>15}{'ValidCodons,':>20}{'SumMatchingCodons,':>20}{'CodonChance':>20}\n"
+    output_file=None
+    writing_compressed=False
     if output_filename[-3:]==".gz": # Writing compressed gz file
+        writing_compressed=True
         output_file=gzip.open(output_filename,"wb")
-        output_file.write(f"{'Motif,':>10}{'Count,':>10}\n".encode())
-        for l in sorted(occurences.items(), key=lambda x: x[1], reverse=True):
-            output_file.write(f"{l[0]+',':>10}{str(l[1])+',':>10}\n".encode())
-        output_file.close()
+        output_file.write(file_header.encode())
     else:
         output_file=open(output_filename, "w")
-        output_file.write(f"{'Motif,':>10}{'Count,':>10}{'%Match,':>10}\n")
-        for l in sorted(occurences.items(), key=lambda x: x[1], reverse=True):
-            output_file.write(f"{l[0]+',':>10}{str(l[1])+',':>10}{(100*l[1]/total_peptide_count):>8.3f}%\n")
-        output_file.close()
+        output_file.write(file_header)
+
+        
+    for l in sorted(occurences.items(), key=lambda x: x[1], reverse=True):
+        codon_occurrences=codon_counter.queryCodonCount(l[0])
+        codon_occurrences_string="["+";".join([str(x) for x in codon_occurrences])+"]"
+        line_to_write=f"{l[0]+',':>10}{str(l[1])+',':>15}{codon_occurrences_string+',':>20}{np.sum(codon_occurrences):>19},{np.prod([x/61 for x in codon_occurrences]):>20.4E}\n"
+        if writing_compressed:
+            output_file.write(line_to_write.encode())
+        else:
+            output_file.write(line_to_write)
+    output_file.close()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

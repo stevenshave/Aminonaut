@@ -15,40 +15,10 @@ __license__ = "MIT"
 
 import argparse
 import re
+import numpy as np
 import gzip
 from itertools import product
-
-
-class CodonCounter():
-    aa_to_codon_count = {
-        'A': 4,
-        'R': 6,
-        'N': 2,
-        'D': 2,
-        'C': 2,
-        'Q': 2,
-        'E': 2,
-        'G': 4,
-        'H': 2,
-        'I': 3,
-        'L': 6,
-        'K': 2,
-        'M': 1,
-        'F': 2,
-        'P': 4,
-        'S': 6,
-        'T': 4,
-        'W': 1,
-        'Y': 2,
-        'V': 4,
-        '.': 61,
-    }
-
-    def query(self, motif):
-        count = 0
-        for c in motif:
-            count += self.aa_to_codon_count[c]
-        return count
+from nullomer_codon_counter import CodonCounter
 
 
 def find_nullomer_motifs(input_filename: str, output_filename, pattern_length):
@@ -83,11 +53,12 @@ def find_nullomer_motifs(input_filename: str, output_filename, pattern_length):
         input_file = open(input_filename)
 
     for line_it, line in enumerate(input_file.readlines()):
+        if line_it==0: continue # Skip file header
         if line_it % 10000 == 0:  # Progress counter
             print(line_it)
         if line.find(",") == -1:
             continue  # If line does not contain a comma, skip
-        if int(line.split(",")[1]) > 0:
+        if int(line.split(",")[-1]) > 0:
             continue  # If not a nullomer, skip
         nullomer_counter += 1
         for regex_query in regex_queries:
@@ -99,23 +70,29 @@ def find_nullomer_motifs(input_filename: str, output_filename, pattern_length):
                 else:
                     occurences[regex_query.pattern] = len(regex_result)
     input_file.close()
-    output_file = None
+    output_file=None
     codon_counter=CodonCounter()
-
-    # Write the output file, containing regex, number of matches.
-    if output_filename[-3:] == ".gz":  # Writing compressed gz file
-        output_file = gzip.open(output_filename, "wb")
-        output_file.write(f"{'Motif,':>10}{'Count,':>10}{'%Match,':>10}{'ValidCodons':>15}\n".encode())
-        for l in sorted(occurences.items(), key=lambda x: x[1], reverse=True):
-            output_file.write(f"{l[0]+',':>10}{str(l[1])+',':>10}{(100*l[1]/nullomer_counter):>8.3f}%{codon_counter.query(l[0]):>15}\n".encode())
-        output_file.close()
+    file_header=f"{'Motif,':>10}{'Count,':>10}{'%Match,':>10}{'ValidCodons,':>20}{'SumMatchingCodons,':>20}{'CodonChance':>20}\n"
+    output_file=None
+    writing_compressed=False
+    if output_filename[-3:]==".gz": # Writing compressed gz file
+        writing_compressed=True
+        output_file=gzip.open(output_filename,"wb")
+        output_file.write(file_header.encode())
     else:
-        output_file = open(output_filename, "w")
-        output_file.write(f"{'Motif,':>10}{'Count,':>10}{'%Match,':>10}{'ValidCodons':>15}\n")
-        for l in sorted(occurences.items(), key=lambda x: x[1], reverse=True):
-            output_file.write(
-                f"{l[0]+',':>10}{str(l[1])+',':>10}{(100*l[1]/nullomer_counter):>8.3f}%{codon_counter.query(l[0]):>15}\n")
-        output_file.close()
+        output_file=open(output_filename, "w")
+        output_file.write(file_header)
+
+        
+    for l in sorted(occurences.items(), key=lambda x: x[1], reverse=True):
+        codon_occurrences=codon_counter.queryCodonCount(l[0])
+        codon_occurrences_string="["+";".join([str(x) for x in codon_occurrences])+"]"
+        line_to_write=f"{l[0]+',':>10}{str(l[1])+',':>10}{(100*l[1]/nullomer_counter):>8.3f}%,{codon_occurrences_string:>20},{np.sum(codon_occurrences):>19},{np.prod([x/61 for x in codon_occurrences]):>19.4E},\n"
+        if writing_compressed:
+            output_file.write(line_to_write.encode())
+        else:
+            output_file.write(line_to_write)
+    output_file.close()
 
 
 if __name__ == "__main__":

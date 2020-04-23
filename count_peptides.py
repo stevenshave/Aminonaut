@@ -14,9 +14,34 @@ from sys import getsizeof
 import argparse
 import numpy as np
 import gzip
-
-
-def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_count_cutoff:int=1e12):
+class CodonCounter():
+    aa_to_codon_count={
+        'A':4,
+        'R':6,
+        'N':2,
+        'D':2,
+        'C':2,
+        'Q':2,
+        'E':2,
+        'G':4,
+        'H':2,
+        'I':3,
+        'L':6,
+        'K':2,
+        'M':1,
+        'F':2,
+        'P':4,
+        'S':6,
+        'T':4,
+        'W':1,
+        'Y':2,
+        'V':4,
+        '.':61,
+    }
+    def queryCodonCount(self, motif):
+        return [self.aa_to_codon_count[c] for c in motif]
+    
+def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_count_cutoff:False):
     """
     Count all AA stretches present in input_file_name, write out counts to csv.
     
@@ -33,6 +58,8 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
     int_to_aa = {valid_amino_acid_symbols_list.index(
         v): v for v in valid_amino_acid_symbols_list}
     
+    # Codon counter - outputs how many unique codons 
+    codon_counter=CodonCounter()
     # count the number of lines in the input file
     lines_in_file=None
     if input_file_name[-3:]==".gz":
@@ -92,8 +119,10 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
     if output_file_name[-3:]==".gz":
         output_file=gzip.open(output_file_name, "wb")
         compressing=True
+        output_file.write("Peptide,NumMatchingCodons,SumMatchingCodons,CodonChance,PeptideOccurrenceCount\n".encode())
     else:
         output_file=open(output_file_name, "w")
+        output_file.write("Peptide,NumMatchingCodons,SumMatchingCodons,CodonChance,PeptideOccurrenceCount\n")
 
     highest_count = np.max(counts)
     print(f"MAX = {highest_count}")
@@ -103,11 +132,15 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
         print("Outputting, ", current_count)
         indexes_of_current_count = np.argwhere(counts == current_count)
         for counts_index in indexes_of_current_count:
-            peptide = [int_to_aa[i] for i in counts_index]
+            peptide = "".join([int_to_aa[i] for i in counts_index])
+            codon_counts=codon_counter.queryCodonCount(peptide)
+            codon_counts_string="["+";".join([str(x) for x in codon_counts])+"]"
+            codon_chance=np.prod([x/61 for x in codon_counts])
+            codon_counts_sum=np.sum(codon_counts)
             if compressing:
-                output_file.write(f"{''.join(peptide)},{counts[tuple(counts_index)]}\n".encode())
+                output_file.write(f"{peptide},{codon_counts_string},{codon_counts_sum},{codon_chance:.4E},{counts[tuple(counts_index)]}\n".encode())
             else:
-                output_file.write(f"{''.join(peptide)},{counts[tuple(counts_index)]}\n")
+               output_file.write(f"{peptide},{codon_counts_string},{codon_counts_sum},{codon_chance:.4E},{counts[tuple(counts_index)]}\n")
     output_file.close()
 
 
