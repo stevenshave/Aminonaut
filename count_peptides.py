@@ -116,17 +116,19 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
     print("Completed readin, now outputting")
     output_file = None
     compressing=False
+    header_line="Peptide,OccurrenceRate,PeptideOccurrenceCount\n"
     if output_file_name[-3:]==".gz":
         output_file=gzip.open(output_file_name, "wb")
         compressing=True
-        output_file.write("Peptide,NumMatchingCodons,SumMatchingCodons,CodonChance,PeptideOccurrenceCount\n".encode())
+        output_file.write(header_line.encode())
     else:
         output_file=open(output_file_name, "w")
-        output_file.write("Peptide,NumMatchingCodons,SumMatchingCodons,CodonChance,PeptideOccurrenceCount\n")
+        output_file.write(header_line)
 
     highest_count = np.max(counts)
+    overall_count=np.sum(counts)
+    print("Overall sum", overall_count)
     print(f"MAX = {highest_count}")
-    #for current_count in sorted(list(set(counts.flatten())), reverse=True):
     for current_count in np.unique(counts)[::-1]:
         if current_count<maximum_count_cutoff: break
         print("Outputting, ", current_count)
@@ -134,13 +136,17 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
         for counts_index in indexes_of_current_count:
             peptide = "".join([int_to_aa[i] for i in counts_index])
             codon_counts=codon_counter.queryCodonCount(peptide)
-            codon_counts_string="["+";".join([str(x) for x in codon_counts])+"]"
             codon_chance=np.prod([x/61 for x in codon_counts])
-            codon_counts_sum=np.sum(codon_counts)
-            if compressing:
-                output_file.write(f"{peptide},{codon_counts_string},{codon_counts_sum},{codon_chance:.4E},{counts[tuple(counts_index)]}\n".encode())
+            enrichment=None
+            if current_count==0:
+                occurrence_rate=0
             else:
-               output_file.write(f"{peptide},{codon_counts_string},{codon_counts_sum},{codon_chance:.4E},{counts[tuple(counts_index)]}\n")
+                occurrence_rate=codon_chance*overall_count/current_count
+            ouput_string=f"{peptide},{occurrence_rate:.4},{current_count}\n"
+            if compressing:
+                output_file.write(ouput_string.encode())
+            else:
+               output_file.write(ouput_string)
     output_file.close()
 
 
