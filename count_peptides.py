@@ -139,7 +139,7 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
             codon_chance=np.prod([x/61 for x in codon_counts])
             enrichment=None
             if current_count==0:
-                occurrence_rate=0.0
+                occurrence_rate=-1.0
             else:
                 occurrence_rate=codon_chance*overall_count/current_count
             ouput_string=f"{peptide},{occurrence_rate:.4},{current_count}\n"
