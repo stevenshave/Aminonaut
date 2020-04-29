@@ -149,6 +149,18 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
             else:
                output_file.write(ouput_string)
     
+    for index, val in np.ndenumerate(counts):
+        if val>0:continue
+        peptide="".join([int_to_aa[i] for i in index])
+        codon_counts=codon_counter.queryCodonCount(peptide)
+        occurrence_rate=-1.0
+        ouput_string=f"{peptide},{occurrence_rate:.4},{current_count}\n"
+        if compressing:
+            output_file.write(ouput_string.encode())
+        else:
+            output_file.write(ouput_string)
+
+
     output_file.close()
 
 
