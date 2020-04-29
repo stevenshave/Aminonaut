@@ -133,7 +133,7 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
         if current_count<maximum_count_cutoff: break
         if current_count==0: continue
         print("Outputting, ", current_count)
-        indexes_of_current_count = np.nonzero(counts == current_count)
+        indexes_of_current_count = np.argwhere(counts == current_count)
         for counts_index in indexes_of_current_count:
             peptide = "".join([int_to_aa[i] for i in counts_index])
             codon_counts=codon_counter.queryCodonCount(peptide)
@@ -148,7 +148,7 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
                 output_file.write(ouput_string.encode())
             else:
                output_file.write(ouput_string)
-    
+    print("Outputting, 0")
     for index, val in np.ndenumerate(counts):
         if val>0:continue
         peptide="".join([int_to_aa[i] for i in index])
