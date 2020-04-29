@@ -132,7 +132,7 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
     for current_count in np.unique(counts)[::-1]:
         if current_count<maximum_count_cutoff: break
         if current_count==0: continue
-        print("Outputting, ", current_count)
+        print(f"Outputting {current_count}")
         indexes_of_current_count = np.argwhere(counts == current_count)
         for counts_index in indexes_of_current_count:
             peptide = "".join([int_to_aa[i] for i in counts_index])
@@ -142,13 +142,13 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
             if current_count==0:
                 occurrence_rate=-1.0
             else:
-                occurrence_rate=current_count/codon_chance*overall_count
+                occurrence_rate=float(current_count)/(float(codon_chance)*float(overall_count))
             ouput_string=f"{peptide},{occurrence_rate:.4},{current_count}\n"
             if compressing:
                 output_file.write(ouput_string.encode())
             else:
                output_file.write(ouput_string)
-    print("Outputting, 0")
+    print("Outputting 0")
     for index, val in np.ndenumerate(counts):
         if val>0:continue
         peptide="".join([int_to_aa[i] for i in index])
