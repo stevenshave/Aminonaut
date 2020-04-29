@@ -154,7 +154,7 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
         peptide="".join([int_to_aa[i] for i in index])
         codon_counts=codon_counter.queryCodonCount(peptide)
         occurrence_rate=-1.0
-        ouput_string=f"{peptide},{occurrence_rate:.4},{current_count}\n"
+        ouput_string=f"{peptide},{occurrence_rate},{current_count}\n"
         if compressing:
             output_file.write(ouput_string.encode())
         else:
