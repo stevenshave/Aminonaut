@@ -61,7 +61,6 @@ def find_nullomer_motifs(input_filename:str, output_filename, pattern_length):
         for pattern in patterns:
             regex_result=count_motif_in_peptide(pattern, line.split(",")[0])
             if regex_result>0: # If regex matches, add to dict or increment
-                print(f"{regex_result=}{pattern=}{line.split(',')[0]=}")
                 if pattern in occurences.keys():
                     occurences[pattern]+=regex_result
                 else:
