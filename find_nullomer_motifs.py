@@ -82,7 +82,6 @@ def find_nullomer_motifs(input_filename:str, output_filename, pattern_length):
         
     for l in sorted(occurences.items(), key=lambda x: x[1], reverse=True):
         codon_occurrences=codon_counter.queryCodonCount(l[0])
-        print(codon_occurrences)
         codon_occurrences_string="["+";".join([str(x) for x in codon_occurrences])+"]"
         line_to_write=f"{''.join(l[0])+',':>10}{str(l[1])+',':>10}{(100*l[1]/nullomer_counter):>8.3f}%,{codon_occurrences_string:>20},{np.sum(codon_occurrences):>19},{np.prod([x/61 for x in codon_occurrences]):>19.4E},\n"
         if writing_compressed:
