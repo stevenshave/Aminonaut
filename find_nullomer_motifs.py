@@ -13,13 +13,18 @@ __author__ = "Steven Shave"
 __version__ = "1.0.0"
 __license__ = "MIT"
 
-import argparse, re, gzip
+import argparse, gzip
 from itertools import product
 import numpy as np
 
+def count_motif_in_peptide(motif, peptide):
+    truemask=[p=="." for p in motif]
+    num_matches=0
+    for i in range(0,len(peptide)-len(motif)+1):
+        num_matches+=np.sum(all([[motif[p]==peptide[i] for p in range(len(motif))][x]|truemask[x] for x in range(len(truemask))]))
+    return num_matches
+
 from nullomer_codon_counter import CodonCounter
-
-
 
 def find_nullomer_motifs(input_filename:str, output_filename, pattern_length):
     """ 
@@ -35,13 +40,9 @@ def find_nullomer_motifs(input_filename:str, output_filename, pattern_length):
     patterns=set(product(*[aas]*pattern_length))
     print("Unique patterns", patterns)
     
-    # Compile to regular expressions all combinations of chars 
-    #regex_queries=[re.compile("".join(m)) for m in unique_patterns]
-    regex_queries=[re.compile("".join(m)) for m in patterns]
-
     # Occurences dictionary holds number of pattern matches
     occurences={}
-    print("Number of regex motif queries=", len(regex_queries))
+    print("Number of regex motif queries=", len(patterns))
     nullomer_counter=0
     
     input_file=None
@@ -57,13 +58,14 @@ def find_nullomer_motifs(input_filename:str, output_filename, pattern_length):
         if line.find(",")==-1:continue # If line does not contain a comma, skip
         if int(line.split(",")[-1])>0:continue # If not a nullomer, skip
         nullomer_counter+=1
-        for regex_query in regex_queries:
-            regex_result=regex_query.findall(line)
-            if len(regex_result)>0: # If regex matches, add to dict or increment
-                if regex_query.pattern in occurences.keys():
-                    occurences[regex_query.pattern]+=len(regex_result)
+        for pattern in patterns:
+            regex_result=count_motif_in_peptide(pattern, line.split(",")[0])
+            if regex_result>0: # If regex matches, add to dict or increment
+                print(f"{regex_result=}{pattern=}{line.split(',')[0]=}")
+                if pattern in occurences.keys():
+                    occurences[pattern]+=regex_result
                 else:
-                    occurences[regex_query.pattern]=len(regex_result)
+                    occurences[pattern]=regex_result
     input_file.close()
     output_file=None
     codon_counter=CodonCounter()
@@ -81,8 +83,9 @@ def find_nullomer_motifs(input_filename:str, output_filename, pattern_length):
         
     for l in sorted(occurences.items(), key=lambda x: x[1], reverse=True):
         codon_occurrences=codon_counter.queryCodonCount(l[0])
+        print(codon_occurrences)
         codon_occurrences_string="["+";".join([str(x) for x in codon_occurrences])+"]"
-        line_to_write=f"{l[0]+',':>10}{str(l[1])+',':>10}{(100*l[1]/nullomer_counter):>8.3f}%,{codon_occurrences_string:>20},{np.sum(codon_occurrences):>19},{np.prod([x/61 for x in codon_occurrences]):>19.4E},\n"
+        line_to_write=f"{''.join(l[0])+',':>10}{str(l[1])+',':>10}{(100*l[1]/nullomer_counter):>8.3f}%,{codon_occurrences_string:>20},{np.sum(codon_occurrences):>19},{np.prod([x/61 for x in codon_occurrences]):>19.4E},\n"
         if writing_compressed:
             output_file.write(line_to_write.encode())
         else:

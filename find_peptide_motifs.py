@@ -17,6 +17,14 @@ from itertools import product
 import numpy as np
 from nullomer_codon_counter import CodonCounter
 
+def count_motif_in_peptide(motif, peptide):
+    truemask=[p=="." for p in motif]
+    num_matches=0
+    for i in range(0,len(peptide)-len(motif)+1):
+        num_matches+=np.sum(all([[motif[p]==peptide[i] for p in range(len(motif))][x]|truemask[x] for x in range(len(truemask))]))
+    return num_matches
+
+
 def find_peptide_motifs(input_filename:str, output_filename, pattern_length):
     """ 
     Function to explore all possible motifs of lenght pattern_length and count
@@ -29,16 +37,11 @@ def find_peptide_motifs(input_filename:str, output_filename, pattern_length):
    
     # Enumerate all combinations of chars in aas. Patterns is used to make sure
     #  we have not seen it before
-    patterns=set()
-    unique_patterns=[x for x in product(*[aas]*pattern_length) if tuple(x[::-1]) not in patterns and not patterns.add(tuple(x))]
-    print("Unique patterns", unique_patterns)
+    motifs=set(product(*[aas]*pattern_length))
+    print("Unique patterns", motifs)
     
-    # Compile to regular expressions all combinations of chars 
-    regex_queries=[re.compile("".join(m)) for m in unique_patterns]
-
-    # Occurences dictionary holds number of pattern matches
+        # Occurences dictionary holds number of pattern matches
     occurences={}
-    print("Number of regex motif queries=", len(regex_queries))
     
     total_peptide_count=0
 
@@ -56,13 +59,13 @@ def find_peptide_motifs(input_filename:str, output_filename, pattern_length):
         if line.find(",")==-1:continue # If line does not contain a comma, skip
         peptide_count=int(line.split(",")[-1])
         total_peptide_count+=peptide_count
-        for regex_query in regex_queries:
-            regex_result=regex_query.findall(line)
-            if len(regex_result)>0: # If regex matches, add to dict or increment
-                if regex_query.pattern in occurences.keys():
-                    occurences[regex_query.pattern]+=len(regex_result)*peptide_count
+        for motif in motifs:
+            regex_result=count_motif_in_peptide(motif, line.split(",")[0])
+            if regex_result>0: # If regex matches, add to dict or increment
+                if motif in occurences.keys():
+                    occurences[motif]+=regex_result*peptide_count
                 else:
-                    occurences[regex_query.pattern]=len(regex_result)*peptide_count
+                    occurences[motif]=regex_result*peptide_count
     input_file.close()
     output_file=None
     codon_counter=CodonCounter()
@@ -81,7 +84,7 @@ def find_peptide_motifs(input_filename:str, output_filename, pattern_length):
     for l in sorted(occurences.items(), key=lambda x: x[1], reverse=True):
         codon_occurrences=codon_counter.queryCodonCount(l[0])
         codon_occurrences_string="["+";".join([str(x) for x in codon_occurrences])+"]"
-        line_to_write=f"{l[0]+',':>10}{str(l[1])+',':>15}{codon_occurrences_string+',':>20}{np.sum(codon_occurrences):>19},{np.prod([x/61 for x in codon_occurrences]):>20.4E}\n"
+        line_to_write=f"{''.join(l[0])+',':>10}{str(l[1])+',':>15}{codon_occurrences_string+',':>20}{np.sum(codon_occurrences):>19},{np.prod([x/61 for x in codon_occurrences]):>20.4E}\n"
         if writing_compressed:
             output_file.write(line_to_write.encode())
         else:
