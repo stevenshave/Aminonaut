@@ -116,7 +116,7 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
     print("Completed readin, now outputting")
     output_file = None
     compressing=False
-    header_line="Peptide,OccurrenceRate,PeptideOccurrenceCount\n"
+    header_line="Peptide,ExpectedCount,OccurrenceRate,PeptideCount\n"
     if output_file_name[-3:]==".gz":
         output_file=gzip.open(output_file_name, "wb")
         compressing=True
@@ -143,7 +143,7 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
                 occurrence_rate=-1.0
             else:
                 occurrence_rate=float(current_count)/(float(codon_chance)*float(overall_count))
-            ouput_string=f"{peptide},{occurrence_rate:.4},{current_count}\n"
+            ouput_string=f"{peptide},{(float(codon_chance)*float(overall_count))},{occurrence_rate:.4},{current_count}\n"
             if compressing:
                 output_file.write(ouput_string.encode())
             else:
@@ -154,12 +154,11 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
         peptide="".join([int_to_aa[i] for i in index])
         codon_counts=codon_counter.queryCodonCount(peptide)
         occurrence_rate=-1.0
-        ouput_string=f"{peptide},{occurrence_rate},{current_count}\n"
+        ouput_string=f"{peptide},{(float(codon_chance)*float(overall_count))},{occurrence_rate:.4},0\n"
         if compressing:
             output_file.write(ouput_string.encode())
         else:
             output_file.write(ouput_string)
-
 
     output_file.close()
 
