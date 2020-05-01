@@ -38,7 +38,7 @@ def find_nullomer_motifs(input_filename:str, output_filename, pattern_length):
    
     # Enumerate all combinations of chars in aas. 
     patterns=set(product(*[aas]*pattern_length))
-    print("Unique patterns", patterns)
+    print(f"Finding {pattern_length}-mer motifs in {input_filename}", patterns)
     
     # Occurences dictionary holds number of pattern matches
     occurences={}
@@ -68,7 +68,7 @@ def find_nullomer_motifs(input_filename:str, output_filename, pattern_length):
     input_file.close()
     output_file=None
     codon_counter=CodonCounter()
-    file_header=f"{'Motif,':>10}{'Count,':>10}{'%Match,':>10}{'ValidCodons,':>20}{'SumMatchingCodons,':>20}{'CodonChance':>20}\n"
+    file_header=f"{'Motif,':>10}{'Count,':>10}{'%Match,':>10}{'ValidCodons,':>20}{'SumMatchingCodons,':>20}{'CodonChance,':>20}{'(TotalNullomers='+str(nullomer_counter)+')':>20}\n"
     output_file=None
     writing_compressed=False
     if output_filename[-3:]==".gz": # Writing compressed gz file
@@ -81,7 +81,7 @@ def find_nullomer_motifs(input_filename:str, output_filename, pattern_length):
 
         
     for l in sorted(occurences.items(), key=lambda x: x[1], reverse=True):
-        codon_occurrences=codon_counter.queryCodonCount(l[0])
+        codon_occurrences=codon_counter.get_codon_count_for_peptide(l[0])
         codon_occurrences_string="["+";".join([str(x) for x in codon_occurrences])+"]"
         line_to_write=f"{''.join(l[0])+',':>10}{str(l[1])+',':>10}{(100*l[1]/nullomer_counter):>8.3f}%,{codon_occurrences_string:>20},{np.sum(codon_occurrences):>19},{np.prod([x/61 for x in codon_occurrences]):>19.4E},\n"
         if writing_compressed:

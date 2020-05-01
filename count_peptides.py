@@ -14,32 +14,7 @@ from sys import getsizeof
 import argparse
 import numpy as np
 import gzip
-class CodonCounter():
-    aa_to_codon_count={
-        'A':4,
-        'R':6,
-        'N':2,
-        'D':2,
-        'C':2,
-        'Q':2,
-        'E':2,
-        'G':4,
-        'H':2,
-        'I':3,
-        'L':6,
-        'K':2,
-        'M':1,
-        'F':2,
-        'P':4,
-        'S':6,
-        'T':4,
-        'W':1,
-        'Y':2,
-        'V':4,
-        '.':61,
-    }
-    def queryCodonCount(self, motif):
-        return [self.aa_to_codon_count[c] for c in motif]
+from nullomer_codon_counter import CodonCounter
     
 def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_count_cutoff:False):
     """
@@ -120,7 +95,7 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
     output_file = None
     compressing=False
     overall_count=np.sum(counts)
-    header_line=f"Peptide,ExpectedCount,OccurrenceRate,PeptideCount, (TotalSequences={total_num_valid_sequences_found}), (TotalPeptides={overall_count})\n"
+    header_line=f"Peptide, EnrichmentByCodonRate, EnrichmentByUniprotRates, PeptideCount, (TotalSequences={total_num_valid_sequences_found}), (TotalPeptides={overall_count})\n"
     if output_file_name[-3:]==".gz":
         output_file=gzip.open(output_file_name, "wb")
         compressing=True
@@ -139,14 +114,13 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
         indexes_of_current_count = np.argwhere(counts == current_count)
         for counts_index in indexes_of_current_count:
             peptide = "".join([int_to_aa[i] for i in counts_index])
-            codon_counts=codon_counter.queryCodonCount(peptide)
-            codon_chance=np.prod([x/61 for x in codon_counts])
+            enrichment_by_codon_rate=float(current_count)/(float(codon_counter.get_codon_occurrence_rate_for_peptide(peptide))*float(overall_count))
+            enrichment_by_uniprot_rates=float(current_count)/(float(codon_counter.get_uniprot_observed_occurrence_rate_for_peptide(peptide))*float(overall_count))
             enrichment=None
             if current_count==0:
-                occurrence_rate=-1.0
-            else:
-                occurrence_rate=float(current_count)/(float(codon_chance)*float(overall_count))
-            ouput_string=f"{peptide},{(float(codon_chance)*float(overall_count))},{occurrence_rate:.4},{current_count}\n"
+                enrichment_by_codon_rate=-1.0
+                enrichment_by_uniprot_rates=-1.0
+            ouput_string=f"{peptide},{enrichment_by_codon_rate:.4},{enrichment_by_uniprot_rates:.4},{current_count}\n"
             if compressing:
                 output_file.write(ouput_string.encode())
             else:
