@@ -77,6 +77,8 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
     print(
         f"Made lookup array, size is {len(counts)} elements, shape is: {counts.shape}, {getsizeof(counts)/1024/1024:>10.3f} MB")
     
+    total_num_valid_sequences_found=0
+
     # Open the file - handling gz compressed if needed
     input_file=None
     if input_file_name[-3:]==".gz":
@@ -112,11 +114,13 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
         # Increment the count for each peptide we see
         for peptide in [sequence[i:i+nullomer_length] for i in range(0, (len(sequence)-nullomer_length)+1)]:
             counts[tuple([aa_to_int[c] for c in peptide])] += 1
+        total_num_valid_sequences_found+=1
 
     print("Completed readin, now outputting")
     output_file = None
     compressing=False
-    header_line="Peptide,ExpectedCount,OccurrenceRate,PeptideCount\n"
+    overall_count=np.sum(counts)
+    header_line=f"Peptide,ExpectedCount,OccurrenceRate,PeptideCount, (TotalSequences={total_num_valid_sequences_found}), (TotalPeptides={overall_count})\n"
     if output_file_name[-3:]==".gz":
         output_file=gzip.open(output_file_name, "wb")
         compressing=True
@@ -126,7 +130,6 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
         output_file.write(header_line)
 
     highest_count = np.max(counts)
-    overall_count=np.sum(counts)
     print("Overall sum", overall_count)
     print(f"MAX = {highest_count}")
     for current_count in np.unique(counts)[::-1]:
