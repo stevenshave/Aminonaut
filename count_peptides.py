@@ -116,7 +116,6 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
             peptide = "".join([int_to_aa[i] for i in counts_index])
             enrichment_by_codon_rate=float(current_count)/(float(codon_counter.get_codon_occurrence_rate_for_peptide(peptide))*float(overall_count))
             enrichment_by_uniprot_rates=float(current_count)/(float(codon_counter.get_uniprot_observed_occurrence_rate_for_peptide(peptide))*float(overall_count))
-            enrichment=None
             if current_count==0:
                 enrichment_by_codon_rate=-1.0
                 enrichment_by_uniprot_rates=-1.0
@@ -129,9 +128,9 @@ def count_peptides(input_file_name, output_file_name, nullomer_length, maximum_c
     for index, val in np.ndenumerate(counts):
         if val>0:continue
         peptide="".join([int_to_aa[i] for i in index])
-        codon_counts=codon_counter.queryCodonCount(peptide)
-        occurrence_rate=-1.0
-        ouput_string=f"{peptide},{(float(codon_chance)*float(overall_count))},{occurrence_rate:.4},0\n"
+        enrichment_by_codon_rate=-1.0
+        enrichment_by_uniprot_rates=-1.0
+        ouput_string=f"{peptide},{enrichment_by_codon_rate:.4},{enrichment_by_uniprot_rates:.4},{current_count}\n"
         if compressing:
             output_file.write(ouput_string.encode())
         else:
