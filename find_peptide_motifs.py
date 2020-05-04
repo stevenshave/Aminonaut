@@ -21,7 +21,7 @@ def count_motif_in_peptide(motif, peptide):
     truemask=[p=="." for p in motif]
     num_matches=0
     for i in range(0,len(peptide)-len(motif)+1):
-        num_matches+=np.sum(all([[motif[p]==peptide[i] for p in range(len(motif))][x]|truemask[x] for x in range(len(truemask))]))
+        num_matches+=np.sum(all([truemask[p]|[motif[j]==peptide[i+j] for j in range(len(motif))][p] for p in range(len(motif))]))
     return num_matches
 
 
@@ -65,11 +65,11 @@ def find_peptide_motifs(input_filename:str, output_filename, pattern_length):
                 if motif in occurences.keys():
                     occurences[motif]+=regex_result*peptide_count
                 else:
-                    occurences[motif]=regex_result*peptide_count
+                    occurences[motif]=np.int64(regex_result*peptide_count)
     input_file.close()
     output_file=None
     codon_counter=CodonCounter()
-    file_header=f"{'Motif,':>10}{'Count,':>15}{'ValidCodons,':>20}{'SumMatchingCodons,':>20}{'CodonChance,':>20}{'(TotalPeptides='+str(total_peptide_count)+')':>20}\n"
+    file_header=f"{'Motif,':>10}{'Count,':>15}{'%Match,':>10}{'ExpectedRateByCodons,':>25}{'ExpectedRateByAARates,':>25}{'ExpectedCountByCodonRates,':>30}{'ExpectedCountByAARates,':>30}{'(TotalPeptides='+str(total_peptide_count)+')':>20}\n"
     output_file=None
     writing_compressed=False
     if output_filename[-3:]==".gz": # Writing compressed gz file
@@ -82,9 +82,14 @@ def find_peptide_motifs(input_filename:str, output_filename, pattern_length):
 
         
     for l in sorted(occurences.items(), key=lambda x: x[1], reverse=True):
-        codon_occurrences=codon_counter.get_codon_count_for_peptide(l[0])
-        codon_occurrences_string="["+";".join([str(x) for x in codon_occurrences])+"]"
-        line_to_write=f"{''.join(l[0])+',':>10}{str(l[1])+',':>15}{codon_occurrences_string+',':>20}{np.sum(codon_occurrences):>19},{np.prod([x/61 for x in codon_occurrences]):>20.4E}\n"
+        expected_rate_by_codons=codon_counter.get_codon_occurrence_rate_for_peptide(l[0])
+        expected_rate_by_aa_occurrences=codon_counter.get_uniprot_observed_occurrence_rate_for_peptide(l[0])
+        line_to_write=f"{''.join(l[0])+',':>10}{str(l[1])+',':>15}{(100*l[1]/np.float64(total_peptide_count)):>8.3f}%,"
+        line_to_write+=f"{expected_rate_by_codons:>24.5E},"
+        line_to_write+=f"{expected_rate_by_aa_occurrences:>24.5E},"
+        line_to_write+=f"{expected_rate_by_codons*float(total_peptide_count):>29.5E},"
+        line_to_write+=f"{expected_rate_by_aa_occurrences*float(total_peptide_count):>29.5E},\n"
+        
         if writing_compressed:
             output_file.write(line_to_write.encode())
         else:
