@@ -1,16 +1,31 @@
-# YAML 1.2
----
-authors: 
-  -
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Aminonaut
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Steven
     family-names: Shave
-    given-names: Steven
-    orcid: "https://orcid.org/0000-0001-6996-3663"
-cff-version: "1.1.0"
-date-released: 2020-04-02
-doi: "10.7488/ds/2797"
+    email: s.shave@ed.ac.uk
+    affiliation: University of Edinburgh
+    orcid: 'https://orcid.org/0000-0001-6996-3663'
+repository-code: 'https://github.com/stevenshave/Aminonaut'
+url: 'https://sites.google.com/view/nullomerpeptides/software'
+abstract: >-
+  Software to identify and analyse nullomer peptides from
+  UniProt (Swiss-Prot) XML data. This software is an output
+  of the Leverhulme funded project: "Understanding the
+  biological ramifications of a ‘forbidden’ peptide
+  nullomer."
+keywords:
+  - Nullomers
+  - NulloPs
+  - Nullomer peptides
 license: MIT
-message: "If you use this software, please cite it using these metadata."
-repository-code: "https://github.com/stevenshave/NullomerPeptides"
-title: NullomerPeptides
-version: "1.0.0"
-...
+commit: 9eb4477acb6218fba75882a3a39e4129d211f213
+version: 1.0.0
+date-released: '2022-04-02'
